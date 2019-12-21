@@ -316,6 +316,41 @@ Linux::Linux(const Driver &D, const llvm::Triple &Triple, const ArgList &Args)
 
   const std::string OSLibDir = getOSLibDir(Triple, Args);
   const std::string MultiarchTriple = getMultiarchTriple(D, Triple, SysRoot);
+  bool NativeBuild = true;
+
+  if(IsAndroid) {
+    if (MultiarchTriple == llvm::sys::getDefaultTargetTriple())
+      addPathIfExists(D, SysRoot + "/data/data/com.termux/files/usr/lib", Paths);
+    else
+      NativeBuild = false;
+
+    if (Arch == llvm::Triple::aarch64) {
+      addPathIfExists(D, SysRoot + "/data/data/com.termux/files/usr/aarch64-linux-android/lib", Paths);
+      addPathIfExists(D, SysRoot + "/system/lib64", Paths);
+      if (!NativeBuild)
+        ExtraOpts.push_back("-rpath=/data/data/com.termux/files/usr/aarch64-linux-android/lib");
+    }
+    else if (Arch == llvm::Triple::arm || Arch == llvm::Triple::thumb) {
+      addPathIfExists(D, SysRoot + "/data/data/com.termux/files/usr/arm-linux-androideabi/lib", Paths);
+      addPathIfExists(D, SysRoot + "/system/lib", Paths);
+      if (!NativeBuild)
+        ExtraOpts.push_back("-rpath=/data/data/com.termux/files/usr/arm-linux-androideabi/lib");
+    }
+    else if (Arch == llvm::Triple::x86_64) {
+      addPathIfExists(D, SysRoot + "/data/data/com.termux/files/usr/x86_64-linux-android/lib", Paths);
+      addPathIfExists(D, SysRoot + "/system/lib64", Paths);
+      if (!NativeBuild)
+        ExtraOpts.push_back("-rpath=/data/data/com.termux/files/usr/x86_64-linux-android/lib");
+    }
+    else if (Arch == llvm::Triple::x86) {
+      addPathIfExists(D, SysRoot + "/data/data/com.termux/files/usr/i686-linux-android/lib", Paths);
+      addPathIfExists(D, SysRoot + "/system/lib", Paths);
+      if (!NativeBuild)
+        ExtraOpts.push_back("-rpath=/data/data/com.termux/files/usr/i686-linux-android/lib");
+    }
+
+    ExtraOpts.push_back("-rpath=/data/data/com.termux/files/usr/lib");
+  }
 
   // Add the multilib suffixed paths where they are available.
   if (GCCInstallation.isValid()) {
@@ -656,6 +691,25 @@ void Linux::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
     return;
 
   if (!DriverArgs.hasArg(options::OPT_nostdlibinc))
+	if  (getTriple().isAndroid()) {
+      switch (getTriple().getArch()) {
+       case llvm::Triple::x86_64:
+       addSystemInclude(DriverArgs, CC1Args, SysRoot + "/data/data/com.termux/files/usr/include/x86_64-linux-android");
+       break;
+       case llvm::Triple::x86:
+       addSystemInclude(DriverArgs, CC1Args, SysRoot + "/data/data/com.termux/files/usr/include/i686-linux-android");
+       break;
+       case llvm::Triple::aarch64:
+       addSystemInclude(DriverArgs, CC1Args, SysRoot + "/data/data/com.termux/files/usr/include/aarch64-linux-android");
+       break;
+       case llvm::Triple::arm:
+       case llvm::Triple::thumb:
+       addSystemInclude(DriverArgs, CC1Args, SysRoot + "/data/data/com.termux/files/usr/include/arm-linux-androideabi");
+       break;
+       default:
+       break;
+       }
+	}
     addSystemInclude(DriverArgs, CC1Args, SysRoot + "/usr/local/include");
 
   SmallString<128> ResourceDirInclude(D.ResourceDir);
@@ -980,7 +1034,7 @@ void Linux::AddIAMCUIncludeArgs(const ArgList &DriverArgs,
 }
 
 bool Linux::isPIEDefault() const {
-  return (getTriple().isAndroid() && !getTriple().isAndroidVersionLT(16)) ||
+  return getTriple().isAndroid()  ||
           getTriple().isMusl() || getSanitizerArgs().requiresPIE();
 }
 

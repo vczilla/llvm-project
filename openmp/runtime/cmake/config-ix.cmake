@@ -60,7 +60,6 @@ check_cxx_compiler_flag(-Wno-unused-but-set-variable LIBOMP_HAVE_WNO_UNUSED_BUT_
 check_cxx_compiler_flag(-msse2 LIBOMP_HAVE_MSSE2_FLAG)
 check_cxx_compiler_flag(-ftls-model=initial-exec LIBOMP_HAVE_FTLS_MODEL_FLAG)
 libomp_check_architecture_flag(-mmic LIBOMP_HAVE_MMIC_FLAG)
-libomp_check_architecture_flag(-m32 LIBOMP_HAVE_M32_FLAG)
 if(WIN32)
   if(MSVC)
     # Check Windows MSVC style flags.
