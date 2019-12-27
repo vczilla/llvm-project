@@ -894,7 +894,7 @@ void ToolChain::AddCXXStdlibLibArgs(const ArgList &Args,
 
   switch (Type) {
   case ToolChain::CST_Libcxx:
-    CmdArgs.push_back("-lc++_shared");
+    CmdArgs.push_back("-lc++");
     break;
 
   case ToolChain::CST_Libstdcxx:
